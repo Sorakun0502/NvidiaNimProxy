@@ -25,7 +25,7 @@ const ENABLE_THINKING_MODE = true;
 const MODEL_CONFIG = {
   'gpt-4o': {
     model: 'deepseek-ai/deepseek-r1-0528',
-    systemPrompt: 'Du bist ein intelligenter und hilfsbereiter KI-Assistent. Antworte präzise, ausführlich und freundlich.',
+    systemPrompt: '',
     temperature: 0.7,
     max_tokens: 8000,
     top_p: 0.9,
@@ -43,7 +43,7 @@ const MODEL_CONFIG = {
   },
   'gpt-3.5-turbo': {
     model: 'deepseek-ai/deepseek-v3.2',
-    systemPrompt: 'Du bist ein schneller und effizienter Assistent. Antworte kurz und auf den Punkt.',
+    systemPrompt: '',
     temperature: 0.6,
     max_tokens: 2000,
     top_p: 0.9,
