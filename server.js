@@ -24,7 +24,7 @@ const ENABLE_THINKING_MODE = true;
 // Hier können Sie für jedes Modell individuelle Einstellungen definieren
 const MODEL_CONFIG = {
   'gpt-4o': {
-    model: 'deepseek-ai/deepseek-r1',
+    model: 'deepseek-ai/deepseek-r1-0528',
     systemPrompt: 'Du bist ein intelligenter und hilfsbereiter KI-Assistent. Antworte präzise, ausführlich und freundlich.',
     temperature: 0.7,
     max_tokens: 8000,
@@ -42,7 +42,7 @@ const MODEL_CONFIG = {
     presence_penalty: 0.0
   },
   'gpt-3.5-turbo': {
-    model: 'deepseek-ai/deepseek-r1-distill-qwen-32b',
+    model: 'deepseek-ai/deepseek-v3.2',
     systemPrompt: 'Du bist ein schneller und effizienter Assistent. Antworte kurz und auf den Punkt.',
     temperature: 0.6,
     max_tokens: 2000,
