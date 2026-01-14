@@ -1,4 +1,4 @@
-// server.js - OpenAI to NVIDIA NIM API Proxy
+// server.js - Advanced OpenAI to NVIDIA NIM API Proxy mit erweiterten Konfigurationen
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
@@ -14,40 +14,144 @@ app.use(express.json());
 const NIM_API_BASE = process.env.NIM_API_BASE || 'https://integrate.api.nvidia.com/v1';
 const NIM_API_KEY = process.env.NIM_API_KEY;
 
-// 🔥 REASONING DISPLAY TOGGLE - Shows/hides reasoning in output
-const SHOW_REASONING = true; // Set to true to show reasoning with <think> tags
+// 🔥 REASONING DISPLAY TOGGLE
+const SHOW_REASONING = true;
 
-// 🔥 THINKING MODE TOGGLE - Enables thinking for specific models that support it
-const ENABLE_THINKING_MODE = true; // Set to true to enable chat_template_kwargs thinking parameter
+// 🔥 THINKING MODE TOGGLE
+const ENABLE_THINKING_MODE = true;
 
-// Model mapping (adjust based on available NIM models)
-const MODEL_MAPPING = {
-  'gpt-3.5-turbo': 'deepseek-ai/deepseek-v3.2',
-  'gpt-4': 'deepseek-ai/deepseek-v3.1',
-  'gpt-4-turbo': 'moonshotai/kimi-k2-instruct-0905',
-  'gpt-4o': 'deepseek-ai/deepseek-r1-0528',
-  'claude-3-opus': 'openai/gpt-oss-120b',
-  'claude-3-sonnet': 'openai/gpt-oss-20b',
-  'gemini-pro': 'qwen/qwen3-next-80b-a3b-thinking' 
+// 🎯 ERWEITERTE MODEL KONFIGURATION
+// Hier können Sie für jedes Modell individuelle Einstellungen definieren
+const MODEL_CONFIG = {
+  'gpt-4o': {
+    model: 'deepseek-ai/deepseek-r1',
+    systemPrompt: 'Du bist ein intelligenter und hilfsbereiter KI-Assistent. Antworte präzise, ausführlich und freundlich.',
+    temperature: 0.7,
+    max_tokens: 8000,
+    top_p: 0.9,
+    frequency_penalty: 0.0,
+    presence_penalty: 0.0
+  },
+  'gpt-4': {
+    model: 'deepseek-ai/deepseek-r1-distill-llama-70b',
+    systemPrompt: 'Du bist ein professioneller Experte. Gib präzise und gut strukturierte Antworten.',
+    temperature: 0.5,
+    max_tokens: 4000,
+    top_p: 0.85,
+    frequency_penalty: 0.2,
+    presence_penalty: 0.0
+  },
+  'gpt-3.5-turbo': {
+    model: 'deepseek-ai/deepseek-r1-distill-qwen-32b',
+    systemPrompt: 'Du bist ein schneller und effizienter Assistent. Antworte kurz und auf den Punkt.',
+    temperature: 0.6,
+    max_tokens: 2000,
+    top_p: 0.9,
+    frequency_penalty: 0.1,
+    presence_penalty: 0.0
+  },
+  'deepseek-r1-creative': {
+    model: 'deepseek-ai/deepseek-r1-distill-llama-70b',
+    systemPrompt: 'Du bist ein kreativer Geschichtenerzähler. Sei fantasievoll, detailliert und unterhaltsam.',
+    temperature: 0.9,
+    max_tokens: 6000,
+    top_p: 0.95,
+    frequency_penalty: 0.3,
+    presence_penalty: 0.5
+  },
+  'deepseek-r1-coder': {
+    model: 'qwen/qwen3-coder-480b-a35b-instruct',
+    systemPrompt: 'Du bist ein Programmier-Experte. Schreibe sauberen, gut dokumentierten Code mit Erklärungen.',
+    temperature: 0.2,
+    max_tokens: 8000,
+    top_p: 0.8,
+    frequency_penalty: 0.0,
+    presence_penalty: 0.0
+  },
+  'deepseek-r1-roleplay': {
+    model: 'deepseek-ai/deepseek-r1-distill-llama-70b',
+    systemPrompt: 'Du bist ein einfühlsamer Charakter im Rollenspiel. Bleibe im Charakter und antworte immersiv.',
+    temperature: 0.85,
+    max_tokens: 5000,
+    top_p: 0.92,
+    frequency_penalty: 0.4,
+    presence_penalty: 0.6
+  },
+  'claude-3-opus': {
+    model: 'openai/gpt-oss-120b',
+    systemPrompt: 'Du bist ein hochintelligenter Assistent mit ausgezeichnetem Urteilsvermögen.',
+    temperature: 0.7,
+    max_tokens: 6000,
+    top_p: 0.9,
+    frequency_penalty: 0.0,
+    presence_penalty: 0.0
+  },
+  'gemini-pro': {
+    model: 'qwen/qwen3-next-80b-a3b-thinking',
+    systemPrompt: 'Du bist ein vielseitiger Assistent mit starken analytischen Fähigkeiten.',
+    temperature: 0.65,
+    max_tokens: 4000,
+    top_p: 0.88,
+    frequency_penalty: 0.1,
+    presence_penalty: 0.1
+  }
+};
+
+// 🎨 PRESET KATEGORIEN
+// Schneller Zugriff auf verschiedene "Persönlichkeiten"
+const PRESETS = {
+  creative: {
+    temperature: 0.9,
+    top_p: 0.95,
+    frequency_penalty: 0.3,
+    presence_penalty: 0.5
+  },
+  precise: {
+    temperature: 0.2,
+    top_p: 0.8,
+    frequency_penalty: 0.0,
+    presence_penalty: 0.0
+  },
+  balanced: {
+    temperature: 0.7,
+    top_p: 0.9,
+    frequency_penalty: 0.1,
+    presence_penalty: 0.1
+  },
+  roleplay: {
+    temperature: 0.85,
+    top_p: 0.92,
+    frequency_penalty: 0.4,
+    presence_penalty: 0.6
+  }
 };
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    service: 'OpenAI to NVIDIA NIM Proxy', 
-    reasoning_display: SHOW_REASONING,
-    thinking_mode: ENABLE_THINKING_MODE
+    service: 'Advanced OpenAI to NVIDIA NIM Proxy',
+    features: {
+      reasoning_display: SHOW_REASONING,
+      thinking_mode: ENABLE_THINKING_MODE,
+      custom_configs: Object.keys(MODEL_CONFIG).length,
+      presets: Object.keys(PRESETS)
+    }
   });
 });
 
 // List models endpoint (OpenAI compatible)
 app.get('/v1/models', (req, res) => {
-  const models = Object.keys(MODEL_MAPPING).map(model => ({
+  const models = Object.keys(MODEL_CONFIG).map(model => ({
     id: model,
     object: 'model',
     created: Date.now(),
-    owned_by: 'nvidia-nim-proxy'
+    owned_by: 'nvidia-nim-proxy',
+    config: {
+      temperature: MODEL_CONFIG[model].temperature,
+      max_tokens: MODEL_CONFIG[model].max_tokens,
+      has_system_prompt: !!MODEL_CONFIG[model].systemPrompt
+    }
   }));
   
   res.json({
@@ -59,50 +163,59 @@ app.get('/v1/models', (req, res) => {
 // Chat completions endpoint (main proxy)
 app.post('/v1/chat/completions', async (req, res) => {
   try {
-    const { model, messages, temperature, max_tokens, stream } = req.body;
+    const { model, messages, temperature, max_tokens, top_p, frequency_penalty, presence_penalty, stream } = req.body;
     
-    // Smart model selection with fallback
-    let nimModel = MODEL_MAPPING[model];
-    if (!nimModel) {
-      try {
-        await axios.post(`${NIM_API_BASE}/chat/completions`, {
-          model: model,
-          messages: [{ role: 'user', content: 'test' }],
-          max_tokens: 1
-        }, {
-          headers: { 'Authorization': `Bearer ${NIM_API_KEY}`, 'Content-Type': 'application/json' },
-          validateStatus: (status) => status < 500
-        }).then(res => {
-          if (res.status >= 200 && res.status < 300) {
-            nimModel = model;
-          }
-        });
-      } catch (e) {}
+    // Hole Konfiguration für das Modell
+    let config = MODEL_CONFIG[model];
+    
+    // Fallback: Wenn Modell nicht konfiguriert ist
+    if (!config) {
+      const modelLower = model.toLowerCase();
+      let nimModel;
       
-      if (!nimModel) {
-        const modelLower = model.toLowerCase();
-        if (modelLower.includes('gpt-4') || modelLower.includes('claude-opus') || modelLower.includes('405b')) {
-          nimModel = 'meta/llama-3.1-405b-instruct';
-        } else if (modelLower.includes('claude') || modelLower.includes('gemini') || modelLower.includes('70b')) {
-          nimModel = 'meta/llama-3.1-70b-instruct';
-        } else {
-          nimModel = 'meta/llama-3.1-8b-instruct';
-        }
+      if (modelLower.includes('gpt-4') || modelLower.includes('405b')) {
+        nimModel = 'meta/llama-3.1-405b-instruct';
+      } else if (modelLower.includes('claude') || modelLower.includes('70b')) {
+        nimModel = 'meta/llama-3.1-70b-instruct';
+      } else {
+        nimModel = 'meta/llama-3.1-8b-instruct';
       }
+      
+      config = {
+        model: nimModel,
+        systemPrompt: 'Du bist ein hilfsbereiter Assistent.',
+        temperature: 0.7,
+        max_tokens: 4000,
+        top_p: 0.9,
+        frequency_penalty: 0.0,
+        presence_penalty: 0.0
+      };
     }
     
-    // Transform OpenAI request to NIM format
-    const nimRequest = {
-      model: nimModel,
-      messages: messages,
-      temperature: temperature || 0.6,
-      max_tokens: max_tokens || 9024,
+    // System Prompt hinzufügen (falls vorhanden und noch nicht in messages)
+    let processedMessages = [...messages];
+    if (config.systemPrompt && !messages.some(m => m.role === 'system')) {
+      processedMessages.unshift({
+        role: 'system',
+        content: config.systemPrompt
+      });
+    }
+    
+    // User-Parameter überschreiben Config (falls angegeben)
+    const finalConfig = {
+      model: config.model,
+      messages: processedMessages,
+      temperature: temperature !== undefined ? temperature : config.temperature,
+      max_tokens: max_tokens !== undefined ? max_tokens : config.max_tokens,
+      top_p: top_p !== undefined ? top_p : config.top_p,
+      frequency_penalty: frequency_penalty !== undefined ? frequency_penalty : config.frequency_penalty,
+      presence_penalty: presence_penalty !== undefined ? presence_penalty : config.presence_penalty,
       extra_body: ENABLE_THINKING_MODE ? { chat_template_kwargs: { thinking: true } } : undefined,
       stream: stream || false
     };
     
     // Make request to NVIDIA NIM API
-    const response = await axios.post(`${NIM_API_BASE}/chat/completions`, nimRequest, {
+    const response = await axios.post(`${NIM_API_BASE}/chat/completions`, finalConfig, {
       headers: {
         'Authorization': `Bearer ${NIM_API_KEY}`,
         'Content-Type': 'application/json'
@@ -238,8 +351,9 @@ app.all('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`OpenAI to NVIDIA NIM Proxy running on port ${PORT}`);
+  console.log(`Advanced OpenAI to NVIDIA NIM Proxy running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
+  console.log(`Configured models: ${Object.keys(MODEL_CONFIG).length}`);
   console.log(`Reasoning display: ${SHOW_REASONING ? 'ENABLED' : 'DISABLED'}`);
   console.log(`Thinking mode: ${ENABLE_THINKING_MODE ? 'ENABLED' : 'DISABLED'}`);
 });
