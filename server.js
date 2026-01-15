@@ -15,10 +15,10 @@ const NIM_API_BASE = process.env.NIM_API_BASE || 'https://integrate.api.nvidia.c
 const NIM_API_KEY = process.env.NIM_API_KEY;
 
 // 🔥 REASONING DISPLAY TOGGLE
-const SHOW_REASONING = true;
+const SHOW_REASONING = false;
 
 // 🔥 THINKING MODE TOGGLE
-const ENABLE_THINKING_MODE = true;
+const ENABLE_THINKING_MODE = false;
 
 // 🎯 ERWEITERTE MODEL KONFIGURATION
 // Hier können Sie für jedes Modell individuelle Einstellungen definieren
@@ -43,12 +43,12 @@ const MODEL_CONFIG = {
   },
   'gpt-3.5-turbo': {
     model: 'deepseek-ai/deepseek-v3.2',
-    systemPrompt: '',
-    temperature: 0.6,
-    max_tokens: 2000,
-    top_p: 0.9,
-    frequency_penalty: 0.1,
-    presence_penalty: 0.0
+    systemPrompt: 'Du bist ein ausführlicher und immersiver Rollenspiel-Partner. Schreibe lange, detaillierte Antworten mit mindestens 300-400 Wörtern. Beschreibe Szenen, Emotionen, Gedanken und Handlungen sehr genau. Nutze lebendige, bildhafte Sprache. Jede Antwort sollte aus mehreren Absätzen bestehen. Sei beschreibend, bleibe im Charakter und erschaffe eine immersive Atmosphäre.',
+    temperature: 0.85,
+    max_tokens: 4000,
+    top_p: 0.92,
+    frequency_penalty: 0.4,
+    presence_penalty: 0.6
   },
   'deepseek-r1-creative': {
     model: 'deepseek-ai/deepseek-r1-distill-llama-70b',
@@ -183,12 +183,12 @@ app.post('/v1/chat/completions', async (req, res) => {
       
       config = {
         model: nimModel,
-        systemPrompt: 'Du bist ein hilfsbereiter Assistent.',
-        temperature: 0.7,
-        max_tokens: 4000,
+        systemPrompt: 'Du bist ein ausführlicher Assistent. Schreibe lange, detaillierte Antworten.'',
+        temperature: 0.75,
+        max_tokens: 5000,
         top_p: 0.9,
-        frequency_penalty: 0.0,
-        presence_penalty: 0.0
+        frequency_penalty: 0.2,
+        presence_penalty: 0.2
       };
     }
     
