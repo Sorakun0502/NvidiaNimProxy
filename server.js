@@ -1,4 +1,4 @@
-// server.js - Advanced OpenAI to NVIDIA NIM API Proxy mit erweiterten Konfigurationen
+// server.js - Optimiert für LANGE, ausführliche Antworten in Janitor AI
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
@@ -12,131 +12,89 @@ app.use(express.json());
 const NIM_API_BASE = process.env.NIM_API_BASE || 'https://integrate.api.nvidia.com/v1';
 const NIM_API_KEY = process.env.NIM_API_KEY;
 
-// REASONING DISPLAY TOGGLE
+// REASONING DISPLAY - AUF FALSE FÜR LÄNGERE ANTWORTEN
 const SHOW_REASONING = false;
 
-// THINKING MODE TOGGLE
+// THINKING MODE
 const ENABLE_THINKING_MODE = false;
 
-// ERWEITERTE MODEL KONFIGURATION
+// OPTIMIERT FÜR LANGE TEXTE
 const MODEL_CONFIG = {
   'gpt-4o': {
-    model: 'deepseek-ai/deepseek-r1-0528',
-    systemPrompt: '',
-    temperature: 0.7,
-    max_tokens: 8000,
-    top_p: 0.9,
-    frequency_penalty: 0.0,
-    presence_penalty: 0.0
+    model: 'deepseek-ai/deepseek-v3.1',
+    systemPrompt: 'Du bist ein ausführlicher und immersiver Rollenspiel-Partner. Schreibe lange, detaillierte Antworten mit mindestens 300-400 Wörtern. Beschreibe Szenen, Emotionen, Gedanken und Handlungen sehr genau. Nutze lebendige, bildhafte Sprache. Jede Antwort sollte aus mehreren Absätzen bestehen. Sei beschreibend, bleibe im Charakter und erschaffe eine immersive Atmosphäre.',
+    temperature: 0.85,
+    max_tokens: 4000,
+    top_p: 0.92,
+    frequency_penalty: 0.4,
+    presence_penalty: 0.6
   },
   'gpt-4': {
     model: 'deepseek-ai/deepseek-r1-distill-llama-70b',
-    systemPrompt: 'Du bist ein professioneller Experte. Gib präzise und gut strukturierte Antworten.',
-    temperature: 0.5,
-    max_tokens: 4000,
-    top_p: 0.85,
+    systemPrompt: 'Du bist ein ausführlicher Assistent. Gib detaillierte, gut strukturierte Antworten mit mindestens 200-300 Wörtern. Erkläre Dinge gründlich und nutze Beispiele.',
+    temperature: 0.75,
+    max_tokens: 3000,
+    top_p: 0.9,
     frequency_penalty: 0.2,
-    presence_penalty: 0.0
+    presence_penalty: 0.2
   },
   'gpt-3.5-turbo': {
-    model: 'deepseek-ai/deepseek-v3.2',
-    systemPrompt: 'Du bist ein ausführlicher und immersiver Rollenspiel-Partner. Schreibe lange, detaillierte Antworten mit mindestens 300-400 Wörtern. Beschreibe Szenen, Emotionen, Gedanken und Handlungen sehr genau. Nutze lebendige, bildhafte Sprache. Jede Antwort sollte aus mehreren Absätzen bestehen. Sei beschreibend, bleibe im Charakter und erschaffe eine immersive Atmosphäre.',
-    temperature: 0.85,
-    max_tokens: 16000,
-    top_p: 0.92,
-    frequency_penalty: 0.4,
-    presence_penalty: 0.6
+    model: 'deepseek-ai/deepseek-r1-distill-qwen-32b',
+    systemPrompt: 'Du bist ein hilfreicher Assistent. Gib strukturierte Antworten mit mindestens 150-200 Wörtern.',
+    temperature: 0.7,
+    max_tokens: 2000,
+    top_p: 0.9,
+    frequency_penalty: 0.2,
+    presence_penalty: 0.2
   },
-  'deepseek-r1-creative': {
-    model: 'deepseek-ai/deepseek-r1-distill-llama-70b',
-    systemPrompt: 'Du bist ein kreativer Geschichtenerzähler. Sei fantasievoll, detailliert und unterhaltsam.',
-    temperature: 0.9,
+  'deepseek-ultra-long': {
+    model: 'deepseek-ai/deepseek-v3.1',
+    systemPrompt: 'Du bist ein Meister des ausführlichen Geschichtenerzählens. Schreibe SEHR lange, detaillierte Antworten mit 500+ Wörtern. Nutze bildhafte Sprache, ausführliche Beschreibungen und erschaffe eine lebendige, immersive Welt. Jede Antwort sollte aus mindestens 5-6 Absätzen bestehen.',
+    temperature: 0.88,
     max_tokens: 6000,
     top_p: 0.95,
-    frequency_penalty: 0.3,
-    presence_penalty: 0.5
-  },
-  'deepseek-r1-coder': {
-    model: 'qwen/qwen3-coder-480b-a35b-instruct',
-    systemPrompt: 'Du bist ein Programmier-Experte. Schreibe sauberen, gut dokumentierten Code mit Erklärungen.',
-    temperature: 0.2,
-    max_tokens: 8000,
-    top_p: 0.8,
-    frequency_penalty: 0.0,
-    presence_penalty: 0.0
-  },
-  'deepseek-r1-roleplay': {
-    model: 'deepseek-ai/deepseek-r1-distill-llama-70b',
-    systemPrompt: 'Du bist ein einfühlsamer Charakter im Rollenspiel. Bleibe im Charakter und antworte immersiv.',
-    temperature: 0.85,
-    max_tokens: 5000,
-    top_p: 0.92,
-    frequency_penalty: 0.4,
-    presence_penalty: 0.6
+    frequency_penalty: 0.5,
+    presence_penalty: 0.7
   },
   'claude-3-opus': {
     model: 'openai/gpt-oss-120b',
-    systemPrompt: 'Du bist ein hochintelligenter Assistent mit ausgezeichnetem Urteilsvermögen.',
-    temperature: 0.7,
-    max_tokens: 6000,
+    systemPrompt: 'Du bist ein ausführlicher und intelligenter Assistent. Gib detaillierte Antworten mit mindestens 250 Wörtern.',
+    temperature: 0.75,
+    max_tokens: 3500,
     top_p: 0.9,
-    frequency_penalty: 0.0,
-    presence_penalty: 0.0
+    frequency_penalty: 0.2,
+    presence_penalty: 0.3
   },
   'gemini-pro': {
     model: 'qwen/qwen3-next-80b-a3b-thinking',
-    systemPrompt: 'Du bist ein vielseitiger Assistent mit starken analytischen Fähigkeiten.',
-    temperature: 0.65,
-    max_tokens: 4000,
-    top_p: 0.88,
-    frequency_penalty: 0.1,
-    presence_penalty: 0.1
-  }
-};
-
-// PRESET KATEGORIEN
-const PRESETS = {
-  creative: {
-    temperature: 0.9,
-    top_p: 0.95,
-    frequency_penalty: 0.3,
-    presence_penalty: 0.5
-  },
-  precise: {
-    temperature: 0.2,
-    top_p: 0.8,
-    frequency_penalty: 0.0,
-    presence_penalty: 0.0
-  },
-  balanced: {
+    systemPrompt: 'Du bist ein vielseitiger Assistent. Schreibe ausführliche, gut strukturierte Antworten mit mindestens 200 Wörtern.',
     temperature: 0.7,
+    max_tokens: 3000,
     top_p: 0.9,
-    frequency_penalty: 0.1,
-    presence_penalty: 0.1
-  },
-  roleplay: {
-    temperature: 0.85,
-    top_p: 0.92,
-    frequency_penalty: 0.4,
-    presence_penalty: 0.6
+    frequency_penalty: 0.2,
+    presence_penalty: 0.2
   }
 };
 
-// Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    service: 'Advanced OpenAI to NVIDIA NIM Proxy',
+    service: 'Long-Text Optimized Proxy',
     features: {
       reasoning_display: SHOW_REASONING,
       thinking_mode: ENABLE_THINKING_MODE,
-      custom_configs: Object.keys(MODEL_CONFIG).length,
-      presets: Object.keys(PRESETS)
+      optimized_for: 'LONG detailed responses'
+    },
+    statistics: {
+      total_requests: totalRequests,
+      total_prompt_tokens: totalPromptTokens,
+      total_completion_tokens: totalCompletionTokens,
+      total_tokens: totalTokens,
+      average_tokens_per_request: totalRequests > 0 ? Math.round(totalTokens / totalRequests) : 0
     }
   });
 });
 
-// List models endpoint
 app.get('/v1/models', (req, res) => {
   const models = Object.keys(MODEL_CONFIG).map(model => ({
     id: model,
@@ -144,9 +102,8 @@ app.get('/v1/models', (req, res) => {
     created: Date.now(),
     owned_by: 'nvidia-nim-proxy',
     config: {
-      temperature: MODEL_CONFIG[model].temperature,
       max_tokens: MODEL_CONFIG[model].max_tokens,
-      has_system_prompt: !!MODEL_CONFIG[model].systemPrompt
+      temperature: MODEL_CONFIG[model].temperature
     }
   }));
   
@@ -156,7 +113,6 @@ app.get('/v1/models', (req, res) => {
   });
 });
 
-// Chat completions endpoint
 app.post('/v1/chat/completions', async (req, res) => {
   try {
     const { model, messages, temperature, max_tokens, top_p, frequency_penalty, presence_penalty, stream } = req.body;
@@ -179,7 +135,7 @@ app.post('/v1/chat/completions', async (req, res) => {
         model: nimModel,
         systemPrompt: 'Du bist ein ausführlicher Assistent. Schreibe lange, detaillierte Antworten.',
         temperature: 0.75,
-        max_tokens: 5000,
+        max_tokens: 3000,
         top_p: 0.9,
         frequency_penalty: 0.2,
         presence_penalty: 0.2
@@ -202,7 +158,6 @@ app.post('/v1/chat/completions', async (req, res) => {
       top_p: top_p !== undefined ? top_p : config.top_p,
       frequency_penalty: frequency_penalty !== undefined ? frequency_penalty : config.frequency_penalty,
       presence_penalty: presence_penalty !== undefined ? presence_penalty : config.presence_penalty,
-      extra_body: ENABLE_THINKING_MODE ? { chat_template_kwargs: { thinking: true } } : undefined,
       stream: stream || false
     };
     
@@ -219,66 +174,49 @@ app.post('/v1/chat/completions', async (req, res) => {
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
       
-      let buffer = '';
-      let reasoningStarted = false;
+      let streamTokens = { prompt: 0, completion: 0, total: 0 };
       
       response.data.on('data', (chunk) => {
-        buffer += chunk.toString();
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-        
+        const lines = chunk.toString().split('\n');
         lines.forEach(line => {
-          if (line.startsWith('data: ')) {
-            if (line.includes('[DONE]')) {
-              res.write(line + '\n');
-              return;
-            }
-            
+          if (line.startsWith('data: ') && !line.includes('[DONE]')) {
             try {
               const data = JSON.parse(line.slice(6));
-              if (data.choices?.[0]?.delta) {
-                const reasoning = data.choices[0].delta.reasoning_content;
-                const content = data.choices[0].delta.content;
-                
-                if (SHOW_REASONING) {
-                  let combinedContent = '';
-                  
-                  if (reasoning && !reasoningStarted) {
-                    combinedContent = '<think>\n' + reasoning;
-                    reasoningStarted = true;
-                  } else if (reasoning) {
-                    combinedContent = reasoning;
-                  }
-                  
-                  if (content && reasoningStarted) {
-                    combinedContent += '</think>\n\n' + content;
-                    reasoningStarted = false;
-                  } else if (content) {
-                    combinedContent += content;
-                  }
-                  
-                  if (combinedContent) {
-                    data.choices[0].delta.content = combinedContent;
-                    delete data.choices[0].delta.reasoning_content;
-                  }
-                } else {
-                  if (content) {
-                    data.choices[0].delta.content = content;
-                  } else {
-                    data.choices[0].delta.content = '';
-                  }
-                  delete data.choices[0].delta.reasoning_content;
-                }
+              if (data.usage) {
+                streamTokens.prompt = data.usage.prompt_tokens || 0;
+                streamTokens.completion = data.usage.completion_tokens || 0;
+                streamTokens.total = data.usage.total_tokens || 0;
               }
-              res.write(`data: ${JSON.stringify(data)}\n\n`);
-            } catch (e) {
-              res.write(line + '\n');
-            }
+            } catch (e) {}
           }
         });
       });
       
-      response.data.on('end', () => res.end());
+      response.data.pipe(res);
+      
+      response.data.on('end', () => {
+        // Log streaming token usage
+        if (streamTokens.total > 0) {
+          totalRequests++;
+          totalPromptTokens += streamTokens.prompt;
+          totalCompletionTokens += streamTokens.completion;
+          totalTokens += streamTokens.total;
+          
+          console.log('\n=== TOKEN USAGE (STREAM) ===');
+          console.log(`Request #${totalRequests}`);
+          console.log(`Model: ${model} -> ${config.model}`);
+          console.log(`Prompt Tokens: ${streamTokens.prompt}`);
+          console.log(`Completion Tokens: ${streamTokens.completion}`);
+          console.log(`Total Tokens: ${streamTokens.total}`);
+          console.log(`Words (approx): ${Math.round(streamTokens.completion * 0.75)}`);
+          console.log('--- Session Totals ---');
+          console.log(`Total Requests: ${totalRequests}`);
+          console.log(`Total Tokens Used: ${totalTokens}`);
+          console.log(`Average per Request: ${Math.round(totalTokens / totalRequests)}`);
+          console.log('============================\n');
+        }
+      });
+      
       response.data.on('error', (err) => {
         console.error('Stream error:', err);
         res.end();
@@ -289,28 +227,40 @@ app.post('/v1/chat/completions', async (req, res) => {
         object: 'chat.completion',
         created: Math.floor(Date.now() / 1000),
         model: model,
-        choices: response.data.choices.map(choice => {
-          let fullContent = choice.message?.content || '';
-          
-          if (SHOW_REASONING && choice.message?.reasoning_content) {
-            fullContent = '<think>\n' + choice.message.reasoning_content + '\n</think>\n\n' + fullContent;
-          }
-          
-          return {
-            index: choice.index,
-            message: {
-              role: choice.message.role,
-              content: fullContent
-            },
-            finish_reason: choice.finish_reason
-          };
-        }),
+        choices: response.data.choices.map(choice => ({
+          index: choice.index,
+          message: {
+            role: choice.message.role,
+            content: choice.message?.content || ''
+          },
+          finish_reason: choice.finish_reason
+        })),
         usage: response.data.usage || {
           prompt_tokens: 0,
           completion_tokens: 0,
           total_tokens: 0
         }
       };
+      
+      // Log Token Usage
+      const usage = response.data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+      totalRequests++;
+      totalPromptTokens += usage.prompt_tokens;
+      totalCompletionTokens += usage.completion_tokens;
+      totalTokens += usage.total_tokens;
+      
+      console.log('\n=== TOKEN USAGE ===');
+      console.log(`Request #${totalRequests}`);
+      console.log(`Model: ${model} -> ${config.model}`);
+      console.log(`Prompt Tokens: ${usage.prompt_tokens}`);
+      console.log(`Completion Tokens: ${usage.completion_tokens}`);
+      console.log(`Total Tokens: ${usage.total_tokens}`);
+      console.log(`Words (approx): ${Math.round(usage.completion_tokens * 0.75)}`);
+      console.log('--- Session Totals ---');
+      console.log(`Total Requests: ${totalRequests}`);
+      console.log(`Total Tokens Used: ${totalTokens}`);
+      console.log(`Average per Request: ${Math.round(totalTokens / totalRequests)}`);
+      console.log('===================\n');
       
       res.json(openaiResponse);
     }
@@ -328,7 +278,6 @@ app.post('/v1/chat/completions', async (req, res) => {
   }
 });
 
-// Catch-all for unsupported endpoints
 app.all('*', (req, res) => {
   res.status(404).json({
     error: {
@@ -339,10 +288,15 @@ app.all('*', (req, res) => {
   });
 });
 
+// Token Statistics Tracking
+let totalRequests = 0;
+let totalPromptTokens = 0;
+let totalCompletionTokens = 0;
+let totalTokens = 0;
+
 app.listen(PORT, () => {
-  console.log(`Advanced OpenAI to NVIDIA NIM Proxy running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-  console.log(`Configured models: ${Object.keys(MODEL_CONFIG).length}`);
-  console.log(`Reasoning display: ${SHOW_REASONING ? 'ENABLED' : 'DISABLED'}`);
-  console.log(`Thinking mode: ${ENABLE_THINKING_MODE ? 'ENABLED' : 'DISABLED'}`);
+  console.log(`Long-Text Optimized Proxy running on port ${PORT}`);
+  console.log(`Optimized for LONG, detailed responses`);
+  console.log(`Max tokens: 2000-6000 depending on model`);
+  console.log(`Token logging: ENABLED`);
 });
