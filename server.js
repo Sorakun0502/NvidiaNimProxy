@@ -160,6 +160,49 @@ app.get('/v1/models', (req, res) => {
   });
 });
 
+function estimateTokens(text) {
+  // Grobe Schätzung: 1 Token ≈ 4 Zeichen
+  return Math.ceil(text.length / 4);
+}
+
+function splitLongUserMessage(message, maxTokens = 8000) {
+  if (estimateTokens(message.content) <= maxTokens) {
+    return [message];
+  }
+  
+  const words = message.content.split(' ');
+  const chunks = [];
+  let currentChunk = [];
+  let currentTokens = 0;
+  
+  for (const word of words) {
+    const wordTokens = estimateTokens(word);
+    
+    if (currentTokens + wordTokens > maxTokens * 0.8 && currentChunk.length > 0) {
+      chunks.push({
+        ...message,
+        content: currentChunk.join(' '),
+        continuation: chunks.length > 0
+      });
+      currentChunk = [word];
+      currentTokens = wordTokens;
+    } else {
+      currentChunk.push(word);
+      currentTokens += wordTokens;
+    }
+  }
+  
+  if (currentChunk.length > 0) {
+    chunks.push({
+      ...message,
+      content: currentChunk.join(' '),
+      continuation: chunks.length > 0
+    });
+  }
+  
+  return chunks;
+}
+
 // Chat completions endpoint (main proxy)
 app.post('/v1/chat/completions', async (req, res) => {
   try {
@@ -206,14 +249,13 @@ app.post('/v1/chat/completions', async (req, res) => {
       model: config.model,
       messages: processedMessages,
       temperature: temperature !== undefined ? temperature : config.temperature,
-      max_tokens: max_tokens !== undefined ? max_tokens : config.max_tokens,
+      max_tokens: max_tokens !== undefined ? max_tokens : safeMaxTokens,
       top_p: top_p !== undefined ? top_p : config.top_p,
       frequency_penalty: frequency_penalty !== undefined ? frequency_penalty : config.frequency_penalty,
       presence_penalty: presence_penalty !== undefined ? presence_penalty : config.presence_penalty,
-      extra_body: ENABLE_THINKING_MODE ? { chat_template_kwargs: { thinking: true } } : undefined,
       stream: stream || false
     };
-    
+    console.log(`📊 Token-Schätzung: Input=${estimatedInputTokens}, Max=${finalConfig.max_tokens}`);
     // Make request to NVIDIA NIM API
     const response = await axios.post(`${NIM_API_BASE}/chat/completions`, finalConfig, {
       headers: {
