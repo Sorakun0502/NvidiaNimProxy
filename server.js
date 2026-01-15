@@ -125,7 +125,10 @@ const PRESETS = {
     presence_penalty: 0.6
   }
 };
-
+const safeMaxTokens = Math.min(
+  config.max_tokens,
+  Math.max(4000, config.max_tokens - Math.min(estimatedInputTokens, config.max_tokens * 0.6))
+);
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
