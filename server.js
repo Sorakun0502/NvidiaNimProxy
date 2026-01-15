@@ -79,11 +79,40 @@ const MODEL_CONFIG = {
 
 // Continuation Prompts - verschiedene Varianten für Abwechslung
 const CONTINUATION_PROMPTS = [
-  "Please continue the description and add more details. Narrate the roleplay to {{user}} in the second person. Dialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*. Texting and speaking over electronics is written inside backticks: "`texting`". Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.",
-  "Develop the scene further and describe what happens next. Narrate the roleplay to {{user}} in the second person. Dialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*. Texting and speaking over electronics is written inside backticks: "`texting`". Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.",
-  "Add more details about the atmosphere and the characters. Narrate the roleplay to {{user}} in the second person. Dialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*. Texting and speaking over electronics is written inside backticks: "`texting`". Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.",
-  "Describe the situation in greater detail with more sensory elements. Narrate the roleplay to {{user}} in the second person. Dialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*. Texting and speaking over electronics is written inside backticks: "`texting`". Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.",
-  "Continue the description and advance the storyline.Narrate the roleplay to {{user}} in the second person. Dialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*. Texting and speaking over electronics is written inside backticks: "`texting`". Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance."
+  `Please continue the description and add more details.
+Narrate the roleplay to {{user}} in the second person.
+Dialogue is written inside quotations: "dialogue".
+Narration is written inside asterisks: *narration*.
+Texting and speaking over electronics is written plainly as text.
+Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.`,
+
+  `Develop the scene further and describe what happens next.
+Narrate the roleplay to {{user}} in the second person.
+Dialogue is written inside quotations: "dialogue".
+Narration is written inside asterisks: *narration*.
+Texting and speaking over electronics is written plainly as text.
+Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.`,
+
+  `Add more details about the atmosphere and the characters.
+Narrate the roleplay to {{user}} in the second person.
+Dialogue is written inside quotations: "dialogue".
+Narration is written inside asterisks: *narration*.
+Texting and speaking over electronics is written plainly as text.
+Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.`,
+
+  `Describe the situation in greater detail with more sensory elements.
+Narrate the roleplay to {{user}} in the second person.
+Dialogue is written inside quotations: "dialogue".
+Narration is written inside asterisks: *narration*.
+Texting and speaking over electronics is written plainly as text.
+Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.`,
+
+  `Continue the description and advance the storyline.
+Narrate the roleplay to {{user}} in the second person.
+Dialogue is written inside quotations: "dialogue".
+Narration is written inside asterisks: *narration*.
+Texting and speaking over electronics is written plainly as text.
+Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.`
 ];
 
 app.get('/health', (req, res) => {
