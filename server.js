@@ -6,22 +6,19 @@ const axios = require('axios');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// NVIDIA NIM API configuration
 const NIM_API_BASE = process.env.NIM_API_BASE || 'https://integrate.api.nvidia.com/v1';
 const NIM_API_KEY = process.env.NIM_API_KEY;
 
-// 🔥 REASONING DISPLAY TOGGLE
+// REASONING DISPLAY TOGGLE
 const SHOW_REASONING = false;
 
-// 🔥 THINKING MODE TOGGLE
+// THINKING MODE TOGGLE
 const ENABLE_THINKING_MODE = false;
 
-// 🎯 ERWEITERTE MODEL KONFIGURATION
-// Hier können Sie für jedes Modell individuelle Einstellungen definieren
+// ERWEITERTE MODEL KONFIGURATION
 const MODEL_CONFIG = {
   'gpt-4o': {
     model: 'deepseek-ai/deepseek-r1-0528',
@@ -97,8 +94,7 @@ const MODEL_CONFIG = {
   }
 };
 
-// 🎨 PRESET KATEGORIEN
-// Schneller Zugriff auf verschiedene "Persönlichkeiten"
+// PRESET KATEGORIEN
 const PRESETS = {
   creative: {
     temperature: 0.9,
@@ -125,10 +121,7 @@ const PRESETS = {
     presence_penalty: 0.6
   }
 };
-const safeMaxTokens = Math.min(
-  config.max_tokens,
-  Math.max(4000, config.max_tokens - Math.min(estimatedInputTokens, config.max_tokens * 0.6))
-);
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ 
@@ -143,7 +136,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// List models endpoint (OpenAI compatible)
+// List models endpoint
 app.get('/v1/models', (req, res) => {
   const models = Object.keys(MODEL_CONFIG).map(model => ({
     id: model,
@@ -163,58 +156,13 @@ app.get('/v1/models', (req, res) => {
   });
 });
 
-function estimateTokens(text) {
-  // Grobe Schätzung: 1 Token ≈ 4 Zeichen
-  return Math.ceil(text.length / 4);
-}
-
-function splitLongUserMessage(message, maxTokens = 8000) {
-  if (estimateTokens(message.content) <= maxTokens) {
-    return [message];
-  }
-  
-  const words = message.content.split(' ');
-  const chunks = [];
-  let currentChunk = [];
-  let currentTokens = 0;
-  
-  for (const word of words) {
-    const wordTokens = estimateTokens(word);
-    
-    if (currentTokens + wordTokens > maxTokens * 0.8 && currentChunk.length > 0) {
-      chunks.push({
-        ...message,
-        content: currentChunk.join(' '),
-        continuation: chunks.length > 0
-      });
-      currentChunk = [word];
-      currentTokens = wordTokens;
-    } else {
-      currentChunk.push(word);
-      currentTokens += wordTokens;
-    }
-  }
-  
-  if (currentChunk.length > 0) {
-    chunks.push({
-      ...message,
-      content: currentChunk.join(' '),
-      continuation: chunks.length > 0
-    });
-  }
-  
-  return chunks;
-}
-
-// Chat completions endpoint (main proxy)
+// Chat completions endpoint
 app.post('/v1/chat/completions', async (req, res) => {
   try {
     const { model, messages, temperature, max_tokens, top_p, frequency_penalty, presence_penalty, stream } = req.body;
     
-    // Hole Konfiguration für das Modell
     let config = MODEL_CONFIG[model];
     
-    // Fallback: Wenn Modell nicht konfiguriert ist
     if (!config) {
       const modelLower = model.toLowerCase();
       let nimModel;
@@ -238,7 +186,6 @@ app.post('/v1/chat/completions', async (req, res) => {
       };
     }
     
-    // System Prompt hinzufügen (falls vorhanden und noch nicht in messages)
     let processedMessages = [...messages];
     if (config.systemPrompt && !messages.some(m => m.role === 'system')) {
       processedMessages.unshift({
@@ -247,19 +194,18 @@ app.post('/v1/chat/completions', async (req, res) => {
       });
     }
     
-    // User-Parameter überschreiben Config (falls angegeben)
     const finalConfig = {
       model: config.model,
       messages: processedMessages,
       temperature: temperature !== undefined ? temperature : config.temperature,
-      max_tokens: max_tokens !== undefined ? max_tokens : safeMaxTokens,
+      max_tokens: max_tokens !== undefined ? max_tokens : config.max_tokens,
       top_p: top_p !== undefined ? top_p : config.top_p,
       frequency_penalty: frequency_penalty !== undefined ? frequency_penalty : config.frequency_penalty,
       presence_penalty: presence_penalty !== undefined ? presence_penalty : config.presence_penalty,
+      extra_body: ENABLE_THINKING_MODE ? { chat_template_kwargs: { thinking: true } } : undefined,
       stream: stream || false
     };
-    console.log(`📊 Token-Schätzung: Input=${estimatedInputTokens}, Max=${finalConfig.max_tokens}`);
-    // Make request to NVIDIA NIM API
+    
     const response = await axios.post(`${NIM_API_BASE}/chat/completions`, finalConfig, {
       headers: {
         'Authorization': `Bearer ${NIM_API_KEY}`,
@@ -269,7 +215,6 @@ app.post('/v1/chat/completions', async (req, res) => {
     });
     
     if (stream) {
-      // Handle streaming response with reasoning
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
@@ -339,7 +284,6 @@ app.post('/v1/chat/completions', async (req, res) => {
         res.end();
       });
     } else {
-      // Transform NIM response to OpenAI format with reasoning
       const openaiResponse = {
         id: `chatcmpl-${Date.now()}`,
         object: 'chat.completion',
