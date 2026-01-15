@@ -183,7 +183,7 @@ app.post('/v1/chat/completions', async (req, res) => {
       
       config = {
         model: nimModel,
-        systemPrompt: 'Du bist ein ausführlicher Assistent. Schreibe lange, detaillierte Antworten.'',
+        systemPrompt: 'Du bist ein ausführlicher Assistent. Schreibe lange, detaillierte Antworten.',
         temperature: 0.75,
         max_tokens: 5000,
         top_p: 0.9,
