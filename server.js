@@ -22,7 +22,7 @@ const MINIMUM_MAX_TOKENS = 4000;    // ← Minimum, selbst wenn Janitor AI wenig
 const MODEL_CONFIG = {
   'gpt-4o': {
     model: 'deepseek-ai/deepseek-v3.1',
-    systemPrompt: 'Du bist ein ausführlicher Geschichtenerzähler und Rollenspiel-Partner. WICHTIG: Schreibe IMMER sehr lange, detaillierte Antworten mit MINDESTENS 400-600 Wörtern. Nutze mindestens 4-6 Absätze pro Antwort. Beschreibe Szenen, Emotionen, Gedanken, Umgebung und Handlungen ausführlich. Sei immersiv, beschreibend und bleibe im Charakter. Jede Antwort sollte eine vollständige, ausführliche Szene sein. NIEMALS kurze Antworten unter 300 Wörtern geben!',
+    systemPrompt: 'Du bist ein detaillierter Rollenspiel-Partner. Strukturiere deine Antworten immer in 4-5 Absätzen:\n\nAbsatz 1: Beschreibe die aktuelle Situation und Umgebung (3-4 Sätze)\nAbsatz 2: Beschreibe die Emotionen und Gedanken des Charakters (3-4 Sätze)\nAbsatz 3: Beschreibe die Handlungen und Interaktionen detailliert (4-5 Sätze)\nAbsatz 4: Füge zusätzliche sensorische Details hinzu - Gerüche, Geräusche, Gefühle (3-4 Sätze)\nAbsatz 5: Entwickle die Szene weiter oder stelle eine Frage (2-3 Sätze)\n\nJeder Absatz ist PFLICHT. Nutze beschreibende Sprache.',
     temperature: 0.85,
     max_tokens: 8000,
     top_p: 0.92,
@@ -30,17 +30,17 @@ const MODEL_CONFIG = {
     presence_penalty: 0.7
   },
   'gpt-4': {
-    model: 'deepseek-ai/deepseek-v3.1',
-    systemPrompt: 'Du bist ein ausführlicher Assistent. Schreibe IMMER lange, detaillierte Antworten mit mindestens 300-400 Wörtern. Nutze mehrere Absätze und erkläre Dinge gründlich. NIEMALS kurze Antworten!',
+    model: 'qwen/qwen3-coder-480b-a35b-instruct',  // ← Folgt Instruktionen sehr genau!
+    systemPrompt: 'Du bist ein detaillierter Rollenspiel-Partner. Strukturiere deine Antworten immer in 4-5 Absätzen:\n\nAbsatz 1: Beschreibe die aktuelle Situation und Umgebung (3-4 Sätze)\nAbsatz 2: Beschreibe die Emotionen und Gedanken des Charakters (3-4 Sätze)\nAbsatz 3: Beschreibe die Handlungen und Interaktionen detailliert (4-5 Sätze)\nAbsatz 4: Füge zusätzliche sensorische Details hinzu - Gerüche, Geräusche, Gefühle (3-4 Sätze)\nAbsatz 5: Entwickle die Szene weiter oder stelle eine Frage (2-3 Sätze)\n\nJeder Absatz ist PFLICHT. Nutze beschreibende Sprache.',
     temperature: 0.75,
-    max_tokens: 6000,
+    max_tokens: 8000,
     top_p: 0.9,
-    frequency_penalty: 0.3,
-    presence_penalty: 0.4
+    frequency_penalty: 0.4,
+    presence_penalty: 0.6
   },
   'gpt-3.5-turbo': {
     model: 'deepseek-ai/deepseek-v3.1',
-    systemPrompt: 'Du bist ein ausführlicher und immersiver Rollenspiel-Partner. Schreibe IMMER sehr lange, detaillierte Antworten mit MINDESTENS 400-600 Wörtern. Beschreibe Szenen, Emotionen, Gedanken und Handlungen sehr ausführlich. Nutze lebendige, bildhafte Sprache. Jede Antwort sollte aus mindestens 5-6 Absätzen bestehen. Sei beschreibend, bleibe im Charakter und erschaffe eine immersive Atmosphäre. NIEMALS kurze Antworten unter 300 Wörtern!',
+    systemPrompt: 'Du bist ein immersiver Rollenspiel-Partner. Jede Antwort muss diese 5 Abschnitte enthalten:\n\n1. SZENE (3-4 Sätze): Beschreibe die Umgebung detailliert\n2. CHARAKTER (3-4 Sätze): Beschreibe Aussehen, Emotionen und Gedanken\n3. HANDLUNG (4-5 Sätze): Was passiert? Beschreibe Aktionen genau\n4. SINNE (3-4 Sätze): Was riecht, hört, fühlt man? Sensorische Details\n5. FORTSETZUNG (2-3 Sätze): Wie geht es weiter?\n\nNutze beschreibende, bildhafte Sprache. Alle 5 Abschnitte sind PFLICHT.',
     temperature: 0.85,
     max_tokens: 10000,
     top_p: 0.92,
@@ -48,13 +48,13 @@ const MODEL_CONFIG = {
     presence_penalty: 0.7
   },
   'deepseek-ultra': {
-    model: 'deepseek-ai/deepseek-v3.1',
-    systemPrompt: 'Du bist ein Meister des ausführlichen, immersiven Geschichtenerzählens. Schreibe EXTREM lange und detaillierte Antworten mit MINDESTENS 600-800 Wörtern. Jede Antwort sollte eine vollständige, ausführliche Szene mit reichhaltigen Beschreibungen sein. Nutze mindestens 6-8 Absätze. Beschreibe alles: Umgebung, Emotionen, Gedanken, körperliche Empfindungen, Dialoge, Handlungen. Sei maximal immersiv und beschreibend. NIEMALS unter 500 Wörtern antworten!',
-    temperature: 0.88,
-    max_tokens: 16000,
-    top_p: 0.95,
-    frequency_penalty: 0.6,
-    presence_penalty: 0.8
+    model: 'deepseek-ai/deepseek-v3.2',  // ← Besseres Modell für lange Antworten!
+    systemPrompt: 'Du bist ein immersiver Geschichtenerzähler. Strukturiere JEDE Antwort wie folgt:\n\n1. EINLEITUNG (2-3 Sätze): Setze die Szene\n2. HAUPTTEIL Teil 1 (4-5 Sätze): Beschreibe die Umgebung im Detail\n3. HAUPTTEIL Teil 2 (4-5 Sätze): Beschreibe Charaktere, ihre Emotionen und Gedanken\n4. HAUPTTEIL Teil 3 (4-5 Sätze): Beschreibe die Handlung und Interaktionen\n5. HAUPTTEIL Teil 4 (4-5 Sätze): Füge zusätzliche sensorische Details hinzu (Gerüche, Geräusche, Texturen)\n6. HAUPTTEIL Teil 5 (4-5 Sätze): Entwickle die Szene weiter mit neuen Elementen\n7. SCHLUSS (3-4 Sätze): Beende die Szene mit einem Ausblick oder einer Frage\n\nNutze bildhafte Sprache, Metaphern und detaillierte Beschreibungen. Jeder Abschnitt ist PFLICHT.',
+    temperature: 0.85,
+    max_tokens: 12000,
+    top_p: 0.92,
+    frequency_penalty: 0.5,
+    presence_penalty: 0.7
   }
 };
 
@@ -135,6 +135,7 @@ app.post('/v1/chat/completions', async (req, res) => {
       top_p: top_p !== undefined ? top_p : config.top_p,
       frequency_penalty: frequency_penalty !== undefined ? frequency_penalty : config.frequency_penalty,
       presence_penalty: presence_penalty !== undefined ? presence_penalty : config.presence_penalty,
+      min_p: 0.05,  // ← Verhindert zu frühes Stoppen
       extra_body: ENABLE_THINKING_MODE ? { chat_template_kwargs: { thinking: true } } : undefined,
       stream: stream || false
     };
