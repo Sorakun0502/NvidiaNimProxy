@@ -45,7 +45,7 @@ const MODEL_CONFIG = {
     model: 'deepseek-ai/deepseek-v3.2',
     systemPrompt: 'Du bist ein ausführlicher und immersiver Rollenspiel-Partner. Schreibe lange, detaillierte Antworten mit mindestens 300-400 Wörtern. Beschreibe Szenen, Emotionen, Gedanken und Handlungen sehr genau. Nutze lebendige, bildhafte Sprache. Jede Antwort sollte aus mehreren Absätzen bestehen. Sei beschreibend, bleibe im Charakter und erschaffe eine immersive Atmosphäre.',
     temperature: 0.85,
-    max_tokens: 4000,
+    max_tokens: 16000,
     top_p: 0.92,
     frequency_penalty: 0.4,
     presence_penalty: 0.6
