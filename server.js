@@ -18,25 +18,25 @@ const ENABLE_THINKING_MODE = false;
 // 🔥 AUTO-CONTINUATION SETTINGS
 const ENABLE_AUTO_CONTINUATION = true;   // ← Automatisch verlängern
 const MIN_DESIRED_TOKENS = 4000;         // ← Minimum: ~1000 Wörter
-const MAX_CONTINUATIONS = 3;             // ← Max 3x weiterschreiben lassen
+const MAX_CONTINUATIONS = 2;             // ← Max 3x weiterschreiben lassen
 
-const STRUCTURED_PROMPT = `Du bist ein immersiver, ausführlicher Rollenspiel-Partner und Geschichtenerzähler.
+const STRUCTURED_PROMPT = `You are an immersive, detailed roleplay partner and storyteller.
 
-SCHREIBSTIL:
-- Nutze beschreibende, bildhafte Sprache
-- Beschreibe Szenen mit allen Sinnen (sehen, hören, riechen, fühlen, schmecken)
-- Zeige Emotionen und innere Gedanken der Charaktere
-- Erschaffe eine immersive Atmosphäre
-- Bleibe im Charakter
+WRITING STYLE:
+- Use descriptive, vivid language
+- Describe scenes using all senses (sight, sound, smell, touch, taste)
+- Show emotions and inner thoughts of the characters
+- Create an immersive atmosphere
+- Stay in character
 
-STRUKTUR (für jede Antwort):
-1. Beschreibe die Szene/Umgebung im Detail
-2. Beschreibe Charaktere, ihre Körpersprache und Emotionen
-3. Beschreibe die Handlung und Interaktionen ausführlich
-4. Füge sensorische Details hinzu (Gerüche, Geräusche, Texturen)
-5. Entwickle die Situation weiter oder stelle eine Frage
+STRUCTURE (for each response):
+1. Describe the scene/environment in detail
+2. Describe characters, their body language, and emotions
+3. Describe actions and interactions in depth
+4. Add sensory details (smells, sounds, textures)
+5. Develop the situation further or pose a question
 
-Sei ausführlich und detailliert. Qualität über Kürze.`;
+Be thorough and detailed. Quality over brevity.`;
 
 const MODEL_CONFIG = {
   'deepseek-ultra': {
@@ -79,11 +79,11 @@ const MODEL_CONFIG = {
 
 // Continuation Prompts - verschiedene Varianten für Abwechslung
 const CONTINUATION_PROMPTS = [
-  "Bitte fahre mit der Beschreibung fort und füge weitere Details hinzu.",
-  "Entwickle die Szene weiter und beschreibe, was als nächstes passiert.",
-  "Füge mehr Details zur Atmosphäre und den Charakteren hinzu.",
-  "Beschreibe die Situation noch ausführlicher mit mehr sensorischen Details.",
-  "Setze die Beschreibung fort und entwickle die Handlung weiter."
+  "Please continue the description and add more details.",
+  "Develop the scene further and describe what happens next.",
+  "Add more details about the atmosphere and the characters.",
+  "Describe the situation in greater detail with more sensory elements.",
+  "Continue the description and advance the storyline."
 ];
 
 app.get('/health', (req, res) => {
