@@ -193,17 +193,19 @@ app.post('/v1/chat/completions', async (req, res) => {
       });
     }
     
+    // 🔥 FORCE OUR CONFIG - Ignore Janitor AI's broken parameters
     const finalConfig = {
       model: config.model,
       messages: processedMessages,
-      temperature: temperature !== undefined ? temperature : config.temperature,
+      temperature: config.temperature,        // Always use our value
       max_tokens: max_tokens !== undefined ? Math.min(max_tokens, config.max_tokens) : config.max_tokens,
-      top_p: top_p !== undefined ? top_p : config.top_p,
-      frequency_penalty: frequency_penalty !== undefined ? frequency_penalty : config.frequency_penalty,
-      presence_penalty: presence_penalty !== undefined ? presence_penalty : config.presence_penalty
+      top_p: config.top_p,                   // Always use our value
+      frequency_penalty: config.frequency_penalty,  // Always use our value (ignore 1.04!)
+      presence_penalty: config.presence_penalty     // Always use our value
     };
     
-    console.log(`⚙️  Config: max_tokens=${finalConfig.max_tokens}, temp=${finalConfig.temperature}, fp=${finalConfig.frequency_penalty}, pp=${finalConfig.presence_penalty}`);
+    console.log(`⚙️  Janitor AI sent: temp=${temperature}, fp=${frequency_penalty}, pp=${presence_penalty}`);
+    console.log(`✅ Using OUR config: temp=${config.temperature}, fp=${config.frequency_penalty}, pp=${config.presence_penalty}, max=${finalConfig.max_tokens}`);
     
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
