@@ -17,7 +17,7 @@ const ENABLE_THINKING_MODE = true;
 
 // 🔥 AUTO-CONTINUATION SETTINGS
 const ENABLE_AUTO_CONTINUATION = true;   // ← Automatisch verlängern
-const MIN_DESIRED_TOKENS = 2000;         // ← Minimum: ~1000 Wörter
+const MIN_DESIRED_TOKENS = 800;         // ← Minimum: ~1000 Wörter
 const MAX_CONTINUATIONS = 1;             // ← Max 3x weiterschreiben lassen
 
 const STRUCTURED_PROMPT = `
