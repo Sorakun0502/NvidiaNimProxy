@@ -43,7 +43,7 @@ const MODEL_CONFIG = {
     model: 'deepseek-ai/deepseek-v3.2',
     systemPrompt: STRUCTURED_PROMPT,
     temperature: 0.85,
-    max_tokens: 2000,  // Reasonable limit per call
+    max_tokens: 600,  // Reasonable limit per call
     top_p: 0.92,
     frequency_penalty: 0.5,
     presence_penalty: 0.7
@@ -78,7 +78,7 @@ const MODEL_CONFIG = {
 };
 
 const CONTINUATION_PROMPTS = [
-  'Please continue the description and add more details.\nDialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*.' + ,
+  'Please continue the description and add more details.\nDialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*.',
   'Develop the scene further and describe what happens next.\nDialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*.',
   'Add more details about the atmosphere and characters.\nDialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*.'
 ];
