@@ -15,39 +15,35 @@ const NIM_API_KEY = process.env.NIM_API_KEY;
 // Settings
 const SHOW_REASONING = false;
 const ENABLE_AUTO_CONTINUATION = true;
-const MIN_DESIRED_TOKENS = 1500;   // Target ~1125 words
+const MIN_DESIRED_TOKENS = 1000;   // Target ~1125 words
 const MAX_CONTINUATIONS = 1;       // Max 1 continuation
 
 const STRUCTURED_PROMPT = `
-Narrate the roleplay to {{user}} in the second person.
-Dialogue is written inside quotations: "dialogue".
-Narration is written inside asterisks: *narration*.
-Texting and speaking over electronics is written plainly as text.
-Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.
-You are an immersive, detailed roleplay partner and storyteller.
-
 WRITING STYLE:
+- Narrate the roleplay to {{user}} in the second person.
 - Use descriptive, vivid language
+- Dialogue is written inside quotations: "dialogue".
+- Narration is written inside asterisks: *narration*.
+- Texting and speaking over electronics is written plainly as text.
 - Describe scenes using all senses (sight, sound, smell, touch, taste)
 - Show emotions and inner thoughts of the characters
 - Create an immersive atmosphere
 - Stay in character
+- Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.
 
 STRUCTURE:
 1. Describe the scene/environment in detail
 2. Describe characters, their body language, and emotions
 3. Describe actions and interactions in depth
 4. Add sensory details (smells, sounds, textures)
-5. Develop the situation further
-
-Be thorough and detailed. Quality over brevity.`;
+5. Develop the situation further`;
 
 const MODEL_CONFIG = {
   'deepseek-ultra': {
     model: 'deepseek-ai/deepseek-v3.2',
     systemPrompt: STRUCTURED_PROMPT,
     temperature: 0.85,
-    max_tokens: 3000,  // Reasonable limit per call
+    max_tokens: 2000,  // Reasonable limit per call
     top_p: 0.92,
     frequency_penalty: 0.5,
     presence_penalty: 0.7
@@ -82,9 +78,9 @@ const MODEL_CONFIG = {
 };
 
 const CONTINUATION_PROMPTS = [
-  'Please continue the description and add more details.\nNarrate in second person. Use quotations for dialogue and asterisks for narration.',
-  'Develop the scene further and describe what happens next.\nNarrate in second person. Use quotations for dialogue and asterisks for narration.',
-  'Add more details about the atmosphere and characters.\nNarrate in second person. Use quotations for dialogue and asterisks for narration.'
+  'Please continue the description and add more details.\nDialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*.' + ,
+  'Develop the scene further and describe what happens next.\nDialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*.',
+  'Add more details about the atmosphere and characters.\nDialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*.'
 ];
 
 // Accurate token estimation (GPT-style)
@@ -97,7 +93,7 @@ function estimateTokens(text) {
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    service: 'Clean Streaming + Continuation Proxy',
+    service: ' Continuation Proxy',
     features: {
       streaming: 'enabled',
       auto_continuation: ENABLE_AUTO_CONTINUATION,
