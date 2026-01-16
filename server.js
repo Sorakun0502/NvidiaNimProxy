@@ -13,11 +13,11 @@ const NIM_API_BASE = process.env.NIM_API_BASE || 'https://integrate.api.nvidia.c
 const NIM_API_KEY = process.env.NIM_API_KEY;
 
 const SHOW_REASONING = false;
-const ENABLE_THINKING_MODE = false;
+const ENABLE_THINKING_MODE = true;
 
 // 🔥 AUTO-CONTINUATION SETTINGS
 const ENABLE_AUTO_CONTINUATION = true;
-const MIN_DESIRED_TOKENS = 1000;
+const MIN_DESIRED_TOKENS = 800;
 const MAX_CONTINUATIONS = 1;
 
 const STRUCTURED_PROMPT = `
