@@ -66,7 +66,7 @@ const MODEL_CONFIG = {
     model: 'deepseek-ai/deepseek-v3.2',
     systemPrompt: STRUCTURED_PROMPT,
     temperature: 0.75,
-    max_tokens: 1200,
+    max_tokens: 3000,
     top_p: 0.88,
     frequency_penalty: 0.3,
     presence_penalty: 0.4
