@@ -1,4 +1,4 @@
-// server.js - DeepSeek v3.2 mit Auto-Continuation für lange Antworten
+// server.js - Clean Streaming + Continuation with Correct Token Counting
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
@@ -12,13 +12,11 @@ app.use(express.json());
 const NIM_API_BASE = process.env.NIM_API_BASE || 'https://integrate.api.nvidia.com/v1';
 const NIM_API_KEY = process.env.NIM_API_KEY;
 
+// Settings
 const SHOW_REASONING = false;
-const ENABLE_THINKING_MODE = true;
-
-// 🔥 AUTO-CONTINUATION SETTINGS
-const ENABLE_AUTO_CONTINUATION = true;   // ← Automatisch verlängern
-const MIN_DESIRED_TOKENS = 600;         // ← Minimum: ~1000 Wörter
-const MAX_CONTINUATIONS = 1;             // ← Max 3x weiterschreiben lassen
+const ENABLE_AUTO_CONTINUATION = true;
+const MIN_DESIRED_TOKENS = 1500;   // Target ~1125 words
+const MAX_CONTINUATIONS = 1;       // Max 1 continuation
 
 const STRUCTURED_PROMPT = `
 Narrate the roleplay to {{user}} in the second person.
@@ -35,12 +33,12 @@ WRITING STYLE:
 - Create an immersive atmosphere
 - Stay in character
 
-STRUCTURE (for each response):
+STRUCTURE:
 1. Describe the scene/environment in detail
 2. Describe characters, their body language, and emotions
 3. Describe actions and interactions in depth
 4. Add sensory details (smells, sounds, textures)
-5. Develop the situation further or pose a question
+5. Develop the situation further
 
 Be thorough and detailed. Quality over brevity.`;
 
@@ -49,7 +47,7 @@ const MODEL_CONFIG = {
     model: 'deepseek-ai/deepseek-v3.2',
     systemPrompt: STRUCTURED_PROMPT,
     temperature: 0.85,
-    max_tokens: 6000,
+    max_tokens: 3000,  // Reasonable limit per call
     top_p: 0.92,
     frequency_penalty: 0.5,
     presence_penalty: 0.7
@@ -58,7 +56,7 @@ const MODEL_CONFIG = {
     model: 'deepseek-ai/deepseek-v3.2',
     systemPrompt: STRUCTURED_PROMPT,
     temperature: 0.85,
-    max_tokens: 6000,
+    max_tokens: 3000,
     top_p: 0.92,
     frequency_penalty: 0.5,
     presence_penalty: 0.7
@@ -67,7 +65,7 @@ const MODEL_CONFIG = {
     model: 'deepseek-ai/deepseek-v3.2',
     systemPrompt: STRUCTURED_PROMPT,
     temperature: 0.8,
-    max_tokens: 5000,
+    max_tokens: 2500,
     top_p: 0.9,
     frequency_penalty: 0.4,
     presence_penalty: 0.6
@@ -76,58 +74,34 @@ const MODEL_CONFIG = {
     model: 'deepseek-ai/deepseek-v3.2',
     systemPrompt: STRUCTURED_PROMPT,
     temperature: 0.8,
-    max_tokens: 5000,
+    max_tokens: 2500,
     top_p: 0.9,
     frequency_penalty: 0.4,
     presence_penalty: 0.6
   }
 };
 
-// Continuation Prompts - verschiedene Varianten für Abwechslung
 const CONTINUATION_PROMPTS = [
-  `Please continue the description and add more details.
-Narrate the roleplay to {{user}} in the second person.
-Dialogue is written inside quotations: "dialogue".
-Narration is written inside asterisks: *narration*.
-Texting and speaking over electronics is written plainly as text.
-Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.`,
-
-  `Develop the scene further and describe what happens next.
-Narrate the roleplay to {{user}} in the second person.
-Dialogue is written inside quotations: "dialogue".
-Narration is written inside asterisks: *narration*.
-Texting and speaking over electronics is written plainly as text.
-Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.`,
-
-  `Add more details about the atmosphere and the characters.
-Narrate the roleplay to {{user}} in the second person.
-Dialogue is written inside quotations: "dialogue".
-Narration is written inside asterisks: *narration*.
-Texting and speaking over electronics is written plainly as text.
-Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.`,
-
-  `Describe the situation in greater detail with more sensory elements.
-Narrate the roleplay to {{user}} in the second person.
-Dialogue is written inside quotations: "dialogue".
-Narration is written inside asterisks: *narration*.
-Texting and speaking over electronics is written plainly as text.
-Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.`,
-
-  `Continue the description and advance the storyline.
-Narrate the roleplay to {{user}} in the second person.
-Dialogue is written inside quotations: "dialogue".
-Narration is written inside asterisks: *narration*.
-Texting and speaking over electronics is written plainly as text.
-Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.`
+  'Please continue the description and add more details.\nNarrate in second person. Use quotations for dialogue and asterisks for narration.',
+  'Develop the scene further and describe what happens next.\nNarrate in second person. Use quotations for dialogue and asterisks for narration.',
+  'Add more details about the atmosphere and characters.\nNarrate in second person. Use quotations for dialogue and asterisks for narration.'
 ];
+
+// Accurate token estimation (GPT-style)
+function estimateTokens(text) {
+  if (!text) return 0;
+  // More accurate: ~4 characters per token for English
+  return Math.ceil(text.length / 4);
+}
 
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    service: 'DeepSeek v3.2 Auto-Continuation Proxy',
+    service: 'Clean Streaming + Continuation Proxy',
     features: {
+      streaming: 'enabled',
       auto_continuation: ENABLE_AUTO_CONTINUATION,
-      min_desired_tokens: MIN_DESIRED_TOKENS,
+      min_tokens: MIN_DESIRED_TOKENS,
       max_continuations: MAX_CONTINUATIONS
     }
   });
@@ -141,99 +115,70 @@ app.get('/v1/models', (req, res) => {
     owned_by: 'nvidia-nim-proxy'
   }));
   
-  res.json({
-    object: 'list',
-    data: models
-  });
+  res.json({ object: 'list', data: models });
 });
 
-async function makeAPICall(config) {
-  const response = await axios.post(`${NIM_API_BASE}/chat/completions`, config, {
+// Stream API response
+async function streamAPICall(config, res) {
+  const response = await axios.post(`${NIM_API_BASE}/chat/completions`, {
+    ...config,
+    stream: true
+  }, {
     headers: {
       'Authorization': `Bearer ${NIM_API_KEY}`,
       'Content-Type': 'application/json'
     },
-    timeout: 250000
+    responseType: 'stream',
+    timeout: 120000
   });
-  return response.data;
-}
-
-async function getContinuedResponse(initialMessages, config, initialContent) {
-  let fullContent = initialContent;
-  let totalTokens = config.max_tokens || 0;
-  let continuations = 0;
   
-  console.log(`🔄 Starting continuation... Initial tokens: ~${Math.round(initialContent.length / 4)}`);
+  let buffer = '';
+  let collectedContent = '';
   
-  while (continuations < MAX_CONTINUATIONS) {
-    const currentTokens = Math.round(fullContent.length / 4);
-    
-    if (currentTokens >= MIN_DESIRED_TOKENS) {
-      console.log(`✅ Target reached: ${currentTokens} tokens (~${Math.round(currentTokens * 0.75)} words)`);
-      break;
-    }
-    
-    continuations++;
-    const continuationPrompt = CONTINUATION_PROMPTS[continuations % CONTINUATION_PROMPTS.length];
-    
-    console.log(`🔄 Continuation ${continuations}/${MAX_CONTINUATIONS}: "${continuationPrompt}"`);
-    
-    // Erstelle neue Messages mit bisheriger Antwort + Continuation Request
-    const continuationMessages = [
-      ...initialMessages,
-      { role: 'assistant', content: fullContent },
-      { role: 'user', content: continuationPrompt }
-    ];
-    
-    const continuationConfig = {
-      ...config,
-      messages: continuationMessages
-    };
-    
-    try {
-      const response = await makeAPICall(continuationConfig);
-      const newContent = response.choices[0]?.message?.content || '';
+  return new Promise((resolve, reject) => {
+    response.data.on('data', (chunk) => {
+      buffer += chunk.toString();
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
       
-      if (newContent.length < 50) {
-        console.log(`⚠️ Continuation too short, stopping`);
-        break;
-      }
-      
-      // Füge neue Inhalte hinzu (mit Absatz-Trennung)
-      fullContent += '\n\n' + newContent;
-      
-      console.log(`📊 After continuation ${continuations}: ~${Math.round(fullContent.length / 4)} tokens`);
-      
-    } catch (error) {
-      console.error(`❌ Continuation ${continuations} failed:`, error.message);
-      break;
-    }
-  }
-  
-  return fullContent;
+      lines.forEach(line => {
+        if (line.startsWith('data: ')) {
+          if (line.includes('[DONE]')) return;
+          
+          try {
+            const data = JSON.parse(line.slice(6));
+            
+            if (data.choices?.[0]?.delta?.content) {
+              const content = data.choices[0].delta.content;
+              collectedContent += content;
+              
+              // Remove reasoning
+              delete data.choices[0].delta.reasoning_content;
+              
+              // Stream to client
+              res.write(`data: ${JSON.stringify(data)}\n\n`);
+            }
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+      });
+    });
+    
+    response.data.on('end', () => resolve(collectedContent));
+    response.data.on('error', reject);
+  });
 }
 
 app.post('/v1/chat/completions', async (req, res) => {
   try {
     const { model, messages, temperature, max_tokens, top_p, frequency_penalty, presence_penalty, stream } = req.body;
     
-    console.log(`📨 Request: model=${model}, stream=${stream || false}`);
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`📨 New request: model=${model}`);
     
-    let config = MODEL_CONFIG[model];
+    let config = MODEL_CONFIG[model] || MODEL_CONFIG['gpt-4o'];
     
-    if (!config) {
-      config = {
-        model: 'deepseek-ai/deepseek-v3.2',
-        systemPrompt: STRUCTURED_PROMPT,
-        temperature: 0.85,
-        max_tokens: 6000,
-        top_p: 0.92,
-        frequency_penalty: 0.5,
-        presence_penalty: 0.7
-      };
-    }
-    
-    // System Prompt hinzufügen
     let processedMessages = [...messages];
     if (config.systemPrompt && !messages.some(m => m.role === 'system')) {
       processedMessages.unshift({
@@ -246,102 +191,116 @@ app.post('/v1/chat/completions', async (req, res) => {
       model: config.model,
       messages: processedMessages,
       temperature: temperature !== undefined ? temperature : config.temperature,
-      max_tokens: max_tokens !== undefined ? max_tokens : config.max_tokens,
+      max_tokens: max_tokens !== undefined ? Math.min(max_tokens, config.max_tokens) : config.max_tokens,
       top_p: top_p !== undefined ? top_p : config.top_p,
       frequency_penalty: frequency_penalty !== undefined ? frequency_penalty : config.frequency_penalty,
-      presence_penalty: presence_penalty !== undefined ? presence_penalty : config.presence_penalty,
-      stream: false  // Continuation funktioniert nur non-stream
+      presence_penalty: presence_penalty !== undefined ? presence_penalty : config.presence_penalty
     };
     
-    console.log(`✅ Sending to NVIDIA: max_tokens=${finalConfig.max_tokens}, model=${finalConfig.model}`);
+    console.log(`⚙️  Config: max_tokens=${finalConfig.max_tokens}, temp=${finalConfig.temperature}`);
     
-    // Erste Antwort holen
-    const initialResponse = await makeAPICall(finalConfig);
-    let finalContent = initialResponse.choices[0]?.message?.content || '';
+    // Setup streaming response
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
     
-    const initialTokens = Math.round(finalContent.length / 4);
-    console.log(`📊 Initial response: ${initialTokens} tokens (~${Math.round(initialTokens * 0.75)} words)`);
+    // First response
+    console.log(`🚀 Streaming initial response...`);
+    let fullContent = await streamAPICall(finalConfig, res);
     
-    // Auto-Continuation wenn aktiviert und zu kurz
-    if (ENABLE_AUTO_CONTINUATION && !stream && initialTokens < MIN_DESIRED_TOKENS) {
-      console.log(`⚠️ Response too short (${initialTokens} < ${MIN_DESIRED_TOKENS}), starting continuation...`);
-      finalContent = await getContinuedResponse(processedMessages, finalConfig, finalContent);
-    }
+    const initialTokens = estimateTokens(fullContent);
+    const initialWords = Math.round(initialTokens * 0.75);
+    console.log(`📊 Initial: ${initialTokens} tokens (~${initialWords} words)`);
     
-    // Streaming-Response (wenn ursprünglich requested)
-    if (stream) {
-      res.setHeader('Content-Type', 'text/event-stream');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Connection', 'keep-alive');
+    // Auto-continuation if needed
+    if (ENABLE_AUTO_CONTINUATION && initialTokens < MIN_DESIRED_TOKENS) {
+      let continuations = 0;
       
-      // Simuliere Streaming indem wir Wort für Wort senden
-      const words = finalContent.split(' ');
-      for (let i = 0; i < words.length; i++) {
-        const chunk = {
+      while (continuations < MAX_CONTINUATIONS) {
+        const currentTokens = estimateTokens(fullContent);
+        
+        if (currentTokens >= MIN_DESIRED_TOKENS) {
+          console.log(`✅ Target reached: ${currentTokens} tokens`);
+          break;
+        }
+        
+        continuations++;
+        console.log(`🔄 Continuation ${continuations}/${MAX_CONTINUATIONS}...`);
+        
+        // Add paragraph break
+        const separator = '\n\n';
+        res.write(`data: ${JSON.stringify({
           id: `chatcmpl-${Date.now()}`,
           object: 'chat.completion.chunk',
           created: Math.floor(Date.now() / 1000),
           model: model,
           choices: [{
             index: 0,
-            delta: {
-              content: (i === 0 ? '' : ' ') + words[i]
-            },
-            finish_reason: i === words.length - 1 ? 'stop' : null
+            delta: { content: separator },
+            finish_reason: null
           }]
+        })}\n\n`);
+        
+        fullContent += separator;
+        
+        // Build continuation request
+        const continuationPrompt = CONTINUATION_PROMPTS[continuations % CONTINUATION_PROMPTS.length];
+        const continuationMessages = [
+          ...processedMessages,
+          { role: 'assistant', content: fullContent },
+          { role: 'user', content: continuationPrompt }
+        ];
+        
+        const continuationConfig = {
+          ...finalConfig,
+          messages: continuationMessages
         };
         
-        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
-        
-        // Kleine Verzögerung für natürliches Streaming
-        if (i % 10 === 0) {
-          await new Promise(resolve => setTimeout(resolve, 50));
+        try {
+          const newContent = await streamAPICall(continuationConfig, res);
+          
+          if (newContent.length < 100) {
+            console.log(`⚠️  Continuation too short (${newContent.length} chars), stopping`);
+            break;
+          }
+          
+          fullContent += newContent;
+          
+          const afterTokens = estimateTokens(fullContent);
+          const afterWords = Math.round(afterTokens * 0.75);
+          console.log(`📊 After continuation: ${afterTokens} tokens (~${afterWords} words)`);
+          
+        } catch (error) {
+          console.error(`❌ Continuation failed:`, error.message);
+          break;
         }
       }
-      
-      res.write('data: [DONE]\n\n');
-      res.end();
-      
-    } else {
-      // Non-streaming response
-      const finalTokens = Math.round(finalContent.length / 4);
-      const wordCount = Math.round(finalTokens * 0.75);
-      
-      const openaiResponse = {
-        id: `chatcmpl-${Date.now()}`,
-        object: 'chat.completion',
-        created: Math.floor(Date.now() / 1000),
-        model: model,
-        choices: [{
-          index: 0,
-          message: {
-            role: 'assistant',
-            content: finalContent
-          },
-          finish_reason: 'stop'
-        }],
-        usage: {
-          prompt_tokens: Math.round(processedMessages.reduce((acc, m) => acc + m.content.length / 4, 0)),
-          completion_tokens: finalTokens,
-          total_tokens: finalTokens + Math.round(processedMessages.reduce((acc, m) => acc + m.content.length / 4, 0))
-        }
-      };
-      
-      console.log(`✅ Final response: ${finalTokens} tokens (~${wordCount} words)`);
-      
-      res.json(openaiResponse);
     }
     
-  } catch (error) {
-    console.error('❌ Proxy error:', error.response?.data || error.message);
+    // End stream
+    res.write('data: [DONE]\n\n');
+    res.end();
     
-    res.status(error.response?.status || 500).json({
+    const finalTokens = estimateTokens(fullContent);
+    const finalWords = Math.round(finalTokens * 0.75);
+    console.log(`✅ Complete: ${finalTokens} tokens (~${finalWords} words)`);
+    console.log(`${'='.repeat(60)}\n`);
+    
+  } catch (error) {
+    console.error('❌ Error:', error.response?.data || error.message);
+    
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', 'text/event-stream');
+    }
+    
+    res.write(`data: ${JSON.stringify({
       error: {
-        message: error.response?.data?.error?.message || error.message || 'Internal server error',
-        type: 'invalid_request_error',
-        code: error.response?.status || 500
+        message: error.message || 'Internal server error',
+        type: 'invalid_request_error'
       }
-    });
+    })}\n\n`);
+    
+    res.end();
   }
 });
 
@@ -356,12 +315,13 @@ app.all('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log('═══════════════════════════════════════════════════════════');
-  console.log('🚀 DeepSeek v3.2 Auto-Continuation Proxy');
-  console.log('═══════════════════════════════════════════════════════════');
+  console.log('\n' + '='.repeat(60));
+  console.log('🚀 Clean Streaming + Continuation Proxy');
+  console.log('='.repeat(60));
   console.log(`📡 Port: ${PORT}`);
-  console.log(`🔄 Auto-continuation: ${ENABLE_AUTO_CONTINUATION ? 'ENABLED ✅' : 'DISABLED'}`);
+  console.log(`⚡ Streaming: ENABLED`);
+  console.log(`🔄 Auto-continuation: ${ENABLE_AUTO_CONTINUATION ? 'ON' : 'OFF'}`);
   console.log(`📊 Target: ${MIN_DESIRED_TOKENS} tokens (~${Math.round(MIN_DESIRED_TOKENS * 0.75)} words)`);
   console.log(`🔁 Max continuations: ${MAX_CONTINUATIONS}`);
-  console.log('═══════════════════════════════════════════════════════════');
+  console.log('='.repeat(60) + '\n');
 });
