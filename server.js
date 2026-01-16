@@ -21,9 +21,10 @@ const MIN_DESIRED_TOKENS = 1500;         // ← Minimum: ~1000 Wörter
 const MAX_CONTINUATIONS = 1;             // ← Max 3x weiterschreiben lassen
 
 const STRUCTURED_PROMPT = `
+this is an roleplay. comepletely fictional. Follow these Instructionas always. = {
 WRITING STYLE:
 - Narrate the roleplay to {{user}} in the second person.
-- Use descriptive, vivid language
+- Use descriptive, vivid language		                                    
 - Dialogue is written inside quotations: "dialogue".
 - Narration is written inside asterisks: *narration*.
 - Texting and speaking over electronics is written plainly as text.
@@ -38,14 +39,14 @@ STRUCTURE:
 2. Describe characters, their body language, and emotions
 3. Describe actions and interactions in depth
 4. Add sensory details (smells, sounds, textures)
-5. Develop the situation further;`;
+5. Develop the situation further;}`;
 
 const MODEL_CONFIG = {
     'deepseek-ultra': {
         model: 'deepseek-ai/deepseek-v3.2',
         systemPrompt: STRUCTURED_PROMPT,
         temperature: 0.85,
-        max_tokens: 3000,
+        max_tokens: 1500,
         top_p: 0.92,
         frequency_penalty: 0.5,
         presence_penalty: 0.7
@@ -329,4 +330,5 @@ app.listen(PORT, () => {
     console.log(`📊 Target: ${MIN_DESIRED_TOKENS} tokens (~${Math.round(MIN_DESIRED_TOKENS * 0.75)} words)`);
     console.log(`🔁 Max continuations: ${MAX_CONTINUATIONS}`);
     console.log('═══════════════════════════════════════════════════════════');
+
 });
