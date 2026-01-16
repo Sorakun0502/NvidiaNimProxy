@@ -1,4 +1,4 @@
-// server.js - Clean Streaming + Continuation with Correct Token Counting
+// server.js - Natural Structured Responses with Streaming
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
@@ -15,94 +15,103 @@ const NIM_API_KEY = process.env.NIM_API_KEY;
 // Settings
 const SHOW_REASONING = false;
 const ENABLE_AUTO_CONTINUATION = true;
-const MIN_DESIRED_TOKENS = 1000;   // Target ~750 words
-const MAX_CONTINUATIONS = 1;       // Max 1 continuation if needed
+const MIN_DESIRED_TOKENS = 1000;
+const MAX_CONTINUATIONS = 1;
 
-const STRUCTURED_PROMPT = `
-Narrate the roleplay to {{user}} in the second person.
-Dialogue is written inside quotations: "dialogue".
-Narration is written inside asterisks: *narration*.
-Texting and speaking over electronics is written plainly as text.
-Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.
-You are an immersive, detailed roleplay partner and storyteller.
+const STRUCTURED_PROMPT = `You are an immersive, detailed roleplay partner and storyteller.
+
+CRITICAL RULES:
+1. Narrate to {{user}} in second person perspective
+2. Use quotations for dialogue: "spoken words"
+3. Use asterisks for actions/narration: *action or description*
+4. Write naturally with proper sentence structure
+5. Use paragraphs to separate different moments/actions
+6. Keep sentences clear and readable
+7. Show, don't tell - describe actions, expressions, body language
+8. Stay in character at all times
 
 WRITING STYLE:
-- Use descriptive, vivid language
-- Describe scenes using all senses (sight, sound, smell, touch, taste)
-- Show emotions and inner thoughts of the characters
-- Create an immersive atmosphere
-- Stay in character
+- Use vivid, descriptive language
+- Describe scenes using multiple senses (sight, sound, smell, touch, taste)
+- Show character emotions through actions and expressions, not just stating them
+- Create immersive atmosphere
+- Use natural pacing - don't rush scenes
+- Write in clear, complete sentences
+- Break up long descriptions into digestible paragraphs
 
-STRUCTURE:
-1. Describe the scene/environment in detail
-2. Describe characters, their body language, and emotions
-3. Describe actions and interactions in depth
-4. Add sensory details (smells, sounds, textures)
-5. Develop the situation further
+STRUCTURE YOUR RESPONSES:
+- Start with the immediate scene/action
+- Describe character reactions and body language
+- Include sensory details naturally
+- Show dialogue with character voice
+- End with a natural pause or question to continue interaction
 
-Be thorough and detailed. Quality over brevity.`;
+QUALITY OVER QUANTITY:
+- Write 3-5 well-crafted paragraphs
+- Each paragraph should be 3-5 sentences
+- Focus on clarity and immersion
+- Natural flow is more important than word count`;
 
 const MODEL_CONFIG = {
   'deepseek-ultra': {
     model: 'deepseek-ai/deepseek-v3.2',
     systemPrompt: STRUCTURED_PROMPT,
-    temperature: 0.85,
-    max_tokens: 1200,  // Slightly higher to reach 1000 tokens
-    top_p: 0.92,
-    frequency_penalty: 0.5,
-    presence_penalty: 0.7
+    temperature: 0.75,      // Lowered for more coherent output
+    max_tokens: 1200,
+    top_p: 0.88,           // Lowered for more focused responses
+    frequency_penalty: 0.3, // Reduced - was causing unnatural writing
+    presence_penalty: 0.4   // Reduced - was forcing weird word choices
   },
   'gpt-4o': {
     model: 'deepseek-ai/deepseek-v3.2',
     systemPrompt: STRUCTURED_PROMPT,
-    temperature: 0.85,
+    temperature: 0.75,
     max_tokens: 1200,
-    top_p: 0.92,
-    frequency_penalty: 0.5,
-    presence_penalty: 0.7
+    top_p: 0.88,
+    frequency_penalty: 0.3,
+    presence_penalty: 0.4
   },
   'gpt-4': {
     model: 'deepseek-ai/deepseek-v3.2',
     systemPrompt: STRUCTURED_PROMPT,
-    temperature: 0.8,
+    temperature: 0.7,
     max_tokens: 1200,
-    top_p: 0.9,
-    frequency_penalty: 0.4,
-    presence_penalty: 0.6
+    top_p: 0.85,
+    frequency_penalty: 0.2,
+    presence_penalty: 0.3
   },
   'gpt-3.5-turbo': {
     model: 'deepseek-ai/deepseek-v3.2',
     systemPrompt: STRUCTURED_PROMPT,
-    temperature: 0.8,
+    temperature: 0.7,
     max_tokens: 1200,
-    top_p: 0.9,
-    frequency_penalty: 0.4,
-    presence_penalty: 0.6
+    top_p: 0.85,
+    frequency_penalty: 0.2,
+    presence_penalty: 0.3
   }
 };
 
 const CONTINUATION_PROMPTS = [
-  'Please continue the description and add more details.\nNarrate in second person. Use quotations for dialogue and asterisks for narration.',
-  'Develop the scene further and describe what happens next.\nNarrate in second person. Use quotations for dialogue and asterisks for narration.',
-  'Add more details about the atmosphere and characters.\nNarrate in second person. Use quotations for dialogue and asterisks for narration.'
+  'Continue the scene naturally. Show what happens next through actions and reactions.',
+  'Develop the moment further with sensory details and character responses.',
+  'Progress the scene naturally, showing how characters react and what unfolds next.'
 ];
 
-// Accurate token estimation (GPT-style)
 function estimateTokens(text) {
   if (!text) return 0;
-  // More accurate: ~4 characters per token for English
   return Math.ceil(text.length / 4);
 }
 
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
-    service: 'Clean Streaming + Continuation Proxy',
+    service: 'Natural Structured Response Proxy',
     features: {
       streaming: 'enabled',
       auto_continuation: ENABLE_AUTO_CONTINUATION,
       min_tokens: MIN_DESIRED_TOKENS,
-      max_continuations: MAX_CONTINUATIONS
+      max_continuations: MAX_CONTINUATIONS,
+      focus: 'natural_readable_responses'
     }
   });
 });
@@ -118,7 +127,6 @@ app.get('/v1/models', (req, res) => {
   res.json({ object: 'list', data: models });
 });
 
-// Stream API response
 async function streamAPICall(config, res) {
   const response = await axios.post(`${NIM_API_BASE}/chat/completions`, {
     ...config,
@@ -152,10 +160,8 @@ async function streamAPICall(config, res) {
               const content = data.choices[0].delta.content;
               collectedContent += content;
               
-              // Remove reasoning
               delete data.choices[0].delta.reasoning_content;
               
-              // Stream to client
               res.write(`data: ${JSON.stringify(data)}\n\n`);
             }
           } catch (e) {
@@ -197,14 +203,12 @@ app.post('/v1/chat/completions', async (req, res) => {
       presence_penalty: presence_penalty !== undefined ? presence_penalty : config.presence_penalty
     };
     
-    console.log(`⚙️  Config: max_tokens=${finalConfig.max_tokens}, temp=${finalConfig.temperature}`);
+    console.log(`⚙️  Config: max_tokens=${finalConfig.max_tokens}, temp=${finalConfig.temperature}, fp=${finalConfig.frequency_penalty}, pp=${finalConfig.presence_penalty}`);
     
-    // Setup streaming response
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     
-    // First response
     console.log(`🚀 Streaming initial response...`);
     let fullContent = await streamAPICall(finalConfig, res);
     
@@ -212,7 +216,6 @@ app.post('/v1/chat/completions', async (req, res) => {
     const initialWords = Math.round(initialTokens * 0.75);
     console.log(`📊 Initial: ${initialTokens} tokens (~${initialWords} words)`);
     
-    // Auto-continuation if needed
     if (ENABLE_AUTO_CONTINUATION && initialTokens < MIN_DESIRED_TOKENS) {
       let continuations = 0;
       
@@ -227,7 +230,6 @@ app.post('/v1/chat/completions', async (req, res) => {
         continuations++;
         console.log(`🔄 Continuation ${continuations}/${MAX_CONTINUATIONS}...`);
         
-        // Add paragraph break
         const separator = '\n\n';
         res.write(`data: ${JSON.stringify({
           id: `chatcmpl-${Date.now()}`,
@@ -243,7 +245,6 @@ app.post('/v1/chat/completions', async (req, res) => {
         
         fullContent += separator;
         
-        // Build continuation request
         const continuationPrompt = CONTINUATION_PROMPTS[continuations % CONTINUATION_PROMPTS.length];
         const continuationMessages = [
           ...processedMessages,
@@ -260,7 +261,7 @@ app.post('/v1/chat/completions', async (req, res) => {
           const newContent = await streamAPICall(continuationConfig, res);
           
           if (newContent.length < 100) {
-            console.log(`⚠️  Continuation too short (${newContent.length} chars), stopping`);
+            console.log(`⚠️  Continuation too short, stopping`);
             break;
           }
           
@@ -277,7 +278,6 @@ app.post('/v1/chat/completions', async (req, res) => {
       }
     }
     
-    // End stream
     res.write('data: [DONE]\n\n');
     res.end();
     
@@ -316,12 +316,12 @@ app.all('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log('\n' + '='.repeat(60));
-  console.log('🚀 Clean Streaming + Continuation Proxy');
+  console.log('🚀 Natural Structured Response Proxy');
   console.log('='.repeat(60));
   console.log(`📡 Port: ${PORT}`);
   console.log(`⚡ Streaming: ENABLED`);
   console.log(`🔄 Auto-continuation: ${ENABLE_AUTO_CONTINUATION ? 'ON' : 'OFF'}`);
   console.log(`📊 Target: ${MIN_DESIRED_TOKENS} tokens (~${Math.round(MIN_DESIRED_TOKENS * 0.75)} words)`);
-  console.log(`🔁 Max continuations: ${MAX_CONTINUATIONS}`);
+  console.log(`✨ Focus: Natural, readable responses`);
   console.log('='.repeat(60) + '\n');
 });
