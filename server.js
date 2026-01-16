@@ -13,7 +13,7 @@ const NIM_API_BASE = process.env.NIM_API_BASE || 'https://integrate.api.nvidia.c
 const NIM_API_KEY = process.env.NIM_API_KEY;
 
 const SHOW_REASONING = false;
-const ENABLE_THINKING_MODE = false;
+const ENABLE_THINKING_MODE = true;
 
 // 🔥 AUTO-CONTINUATION SETTINGS
 const ENABLE_AUTO_CONTINUATION = true;   // ← Automatisch verlängern
