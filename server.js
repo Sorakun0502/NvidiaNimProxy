@@ -17,10 +17,16 @@ const ENABLE_THINKING_MODE = false;
 
 // 🔥 AUTO-CONTINUATION SETTINGS
 const ENABLE_AUTO_CONTINUATION = true;   // ← Automatisch verlängern
-const MIN_DESIRED_TOKENS = 4000;         // ← Minimum: ~1000 Wörter
+const MIN_DESIRED_TOKENS = 2000;         // ← Minimum: ~1000 Wörter
 const MAX_CONTINUATIONS = 1;             // ← Max 3x weiterschreiben lassen
 
-const STRUCTURED_PROMPT = `You are an immersive, detailed roleplay partner and storyteller.
+const STRUCTURED_PROMPT = `
+Narrate the roleplay to {{user}} in the second person.
+Dialogue is written inside quotations: "dialogue".
+Narration is written inside asterisks: *narration*.
+Texting and speaking over electronics is written plainly as text.
+Accurately portray the characters actions and dialogue realistically based on their personality, gender, and physical appearance.
+You are an immersive, detailed roleplay partner and storyteller.
 
 WRITING STYLE:
 - Use descriptive, vivid language
