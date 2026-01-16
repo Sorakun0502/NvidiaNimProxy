@@ -15,7 +15,7 @@ const NIM_API_KEY = process.env.NIM_API_KEY;
 // Settings
 const SHOW_REASONING = false;
 const ENABLE_AUTO_CONTINUATION = true;
-const MIN_DESIRED_TOKENS = 1000;
+const MIN_DESIRED_TOKENS = 800;
 const MAX_CONTINUATIONS = 1;
 
 const STRUCTURED_PROMPT = `You are an immersive, detailed roleplay partner and storyteller.
