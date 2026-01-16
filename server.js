@@ -46,7 +46,7 @@ const MODEL_CONFIG = {
         model: 'deepseek-ai/deepseek-v3.2',
         systemPrompt: STRUCTURED_PROMPT,
         temperature: 0.85,
-        max_tokens: 1500,
+        max_tokens: 2000,
         top_p: 0.92,
         frequency_penalty: 0.5,
         presence_penalty: 0.7
@@ -332,4 +332,5 @@ app.listen(PORT, () => {
     console.log('═══════════════════════════════════════════════════════════');
 
 });
+
 
