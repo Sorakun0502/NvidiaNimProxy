@@ -78,7 +78,7 @@ const MODEL_CONFIG = {
 };
 
 const CONTINUATION_PROMPTS = [
-  'Please continue the description and add more details.\nDialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*.' + ,
+  'Please continue the description and add more details.\nDialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*.',
   'Develop the scene further and describe what happens next.\nDialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*.',
   'Add more details about the atmosphere and characters.\nDialogue is written inside quotations: "dialogue". Narration is written inside asterisks: *narration*.'
 ];
