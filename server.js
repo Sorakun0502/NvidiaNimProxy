@@ -257,14 +257,14 @@ app.post('/v1/chat/completions', async (req, res) => {
         const continuationConfig = {
           ...finalConfig,
           messages: continuationMessages,
-          max_tokens: 400  // Limit continuation to ~300 tokens
+          max_tokens: 500  // Increased from 400 for better continuation
         };
         
         try {
           const newContent = await streamAPICall(continuationConfig, res);
           
-          if (newContent.length < 100) {
-            console.log(`⚠️  Continuation too short, stopping`);
+          if (newContent.length < 50) {  // Lowered from 100 to accept shorter continuations
+            console.log(`⚠️  Continuation too short (${newContent.length} chars), stopping`);
             break;
           }
           
@@ -319,12 +319,14 @@ app.all('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log('\n' + '='.repeat(60));
-  console.log('🚀 Natural Structured Response Proxy');
+  console.log('🚀 Natural Structured Response Proxy v2.1');
   console.log('='.repeat(60));
   console.log(`📡 Port: ${PORT}`);
   console.log(`⚡ Streaming: ENABLED`);
-  console.log(`🔄 Auto-continuation: ${ENABLE_AUTO_CONTINUATION ? 'ON' : 'OFF'}`);
+  console.log(`🔄 Auto-continuation: ${ENABLE_AUTO_CONTINUATION ? 'ON ✅' : 'OFF'}`);
   console.log(`📊 Target: ${MIN_DESIRED_TOKENS} tokens (~${Math.round(MIN_DESIRED_TOKENS * 0.75)} words)`);
+  console.log(`📝 Initial max: 1100 tokens`);
+  console.log(`➕ Continuation max: 500 tokens`);
   console.log(`✨ Focus: Natural, readable responses`);
   console.log('='.repeat(60) + '\n');
 });
