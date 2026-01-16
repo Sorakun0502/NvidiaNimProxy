@@ -14,9 +14,9 @@ const NIM_API_KEY = process.env.NIM_API_KEY;
 
 // Settings
 const SHOW_REASONING = false;
-const ENABLE_AUTO_CONTINUATION = true;
-const MIN_DESIRED_TOKENS = 800;
-const MAX_CONTINUATIONS = 1;
+const ENABLE_AUTO_CONTINUATION = false;  // Disabled to avoid timeouts
+const MIN_DESIRED_TOKENS = 1000;
+const MAX_CONTINUATIONS = 0;             // No continuations
 
 const STRUCTURED_PROMPT = `You are an immersive, detailed roleplay partner and storyteller.
 
@@ -66,7 +66,7 @@ const MODEL_CONFIG = {
     model: 'deepseek-ai/deepseek-v3.2',
     systemPrompt: STRUCTURED_PROMPT,
     temperature: 0.75,
-    max_tokens: 3000,
+    max_tokens: 1200,
     top_p: 0.88,
     frequency_penalty: 0.3,
     presence_penalty: 0.4
@@ -92,9 +92,9 @@ const MODEL_CONFIG = {
 };
 
 const CONTINUATION_PROMPTS = [
-  'Continue the scene naturally. Show what happens next through actions and reactions.',
-  'Develop the moment further with sensory details and character responses.',
-  'Progress the scene naturally, showing how characters react and what unfolds next.'
+  'Continue briefly with 2-3 more paragraphs.',
+  'Add a bit more detail in 2-3 paragraphs.',
+  'Develop the moment slightly further in 2-3 paragraphs.'
 ];
 
 function estimateTokens(text) {
@@ -137,7 +137,7 @@ async function streamAPICall(config, res) {
       'Content-Type': 'application/json'
     },
     responseType: 'stream',
-    timeout: 120000
+    timeout: 180000  // 3 minutes instead of 2
   });
   
   let buffer = '';
@@ -256,7 +256,8 @@ app.post('/v1/chat/completions', async (req, res) => {
         
         const continuationConfig = {
           ...finalConfig,
-          messages: continuationMessages
+          messages: continuationMessages,
+          max_tokens: 400  // Limit continuation to ~300 tokens
         };
         
         try {
